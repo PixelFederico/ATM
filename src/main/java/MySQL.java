@@ -1,13 +1,13 @@
+import java.math.BigDecimal;
 import java.sql.*;
 
 public class MySQL {
 
-    public static Connection conn = null;
+    private static Connection conn = null;
     private static Statement stmt;
 
     public static void init(){
-        Statement stmt = null;
-        ResultSet rs = null;
+        //Statement stmt = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
         } catch (ClassNotFoundException e) {
@@ -52,7 +52,7 @@ public class MySQL {
             result.last();
             double count = result.getRow();
 
-            if(count>0) return true;
+            if(count==1) return true;
         } catch (SQLException ex) {
             System.out.println("SQLException: " + ex.getMessage());
             System.out.println("SQLState: " + ex.getSQLState());
@@ -92,5 +92,70 @@ public class MySQL {
             System.out.println("VendorError: " + ex.getErrorCode());
         }
         return null;
+    }
+    public static void withdraw(User user, double withdraw){
+        try {
+            stmt = conn.createStatement();
+            BigDecimal newwallet = BigDecimal.valueOf(user.wallet).add(BigDecimal.valueOf(withdraw));
+            BigDecimal newbank = BigDecimal.valueOf(user.bank).subtract(BigDecimal.valueOf(withdraw));
+
+            if(newbank.abs().equals(newbank)){
+                stmt.executeUpdate("UPDATE users SET bank='"+newbank+"' WHERE pin = '"+user.pin+"'");
+                stmt.executeUpdate("UPDATE users SET wallet='"+newwallet+"' WHERE pin = '"+user.pin+"'");
+            }else{
+                System.out.println("Impossibile ritirare, non hai abbastanza soldi in banca");
+            }
+        } catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+        }
+    }
+    public static void deposit(User user, double withdraw){
+        try {
+            stmt = conn.createStatement();
+            BigDecimal newbank = BigDecimal.valueOf(user.bank).add(BigDecimal.valueOf(withdraw));
+            BigDecimal newwallet = BigDecimal.valueOf(user.wallet).subtract(BigDecimal.valueOf(withdraw));
+
+            if(newwallet.abs().equals(newwallet)) {
+                stmt.executeUpdate("UPDATE users SET bank='" + newbank + "' WHERE pin = '" + user.pin + "'");
+                stmt.executeUpdate("UPDATE users SET wallet='" + newwallet + "' WHERE pin = '" + user.pin + "'");
+            }else{
+                System.out.println("Impossibile depositare, non hai abbastanza soldi in tasca");
+            }
+        } catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+        }
+    }
+    public static void deleteAccount(User user){
+        try {
+            stmt = conn.createStatement();
+            stmt.executeUpdate("DELETE FROM `users` WHERE pin='"+user.pin+"'");
+        } catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+        }
+    }
+    public static boolean pinExist(String pin){
+        try {
+            ResultSet result;
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+
+            String getpin = "SELECT pin FROM users WHERE pin = '"+pin+"'";
+            result = stmt.executeQuery(getpin);
+            result.last();
+            double count = result.getRow();
+
+            if(count>0) return true;
+        } catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+        }
+        return false;
     }
 }

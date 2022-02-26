@@ -27,7 +27,7 @@ public class Main {
 
         }else{
             if(MySQL.exist(hashed)){
-                Session.generateSession(MySQL.getUser(hashed));
+                Session.generateSession(hashed);
             }else{
                 System.out.println("Pin non corretto!");
             }
